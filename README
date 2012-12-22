@@ -1,0 +1,7 @@
+1. To compile the program, please type the command: make
+
+2. To run the server, type: ./myhttpd
+
+3. All the features are accomplished. You can type any options defined in the project requirement document.
+
+4. When typing the logging file, the file name must begin with "/".

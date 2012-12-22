@@ -1,0 +1,74 @@
+Design Document
+
+1. Team #: G36
+   Name: Chao Zhang       Email: czhang28@buffalo.edu
+   Name: Pengcheng Yin    Email: pyin2@buffalo.edu
+   Name: Zhou Zhou        Email: zzhou9@buffalo.edu
+
+2. Responsibilities of each team member
+   Zhou Zhou:
+    Implement the parameters accept part.
+    Implement the logging part.
+
+   Pengcheng Yin:
+    Create a basic server which the server and the client can communicate with each other.
+    Analyze and output the headers.
+    Produce the file request part. Including produce request initial with '~', and return the files in the directory when the request file doesn't exist.
+
+   Chao Zhang:
+    Design the data structure of queue, jobs, thread pool and arguments.
+    Implement the thread pool and design how to dispatch jobs to the threads in the pool.
+    Design the synchronization during enqueue and dequeue.
+    Implement the FCFS and SJF.
+
+3. Data structures:
+   Job:
+    typedef struct JobStruct {
+      void *(*function)(void *arg);  // define what job it should do
+      void *arg;                     // args pass to the function
+      struct JobStruct *next;        // pointer to the next job
+      struct JobStruct *prev;        // pointer to the prev job
+      int size;                      // job size
+    }Job;
+
+   Queue:
+    typedef struct QueueStruct {
+      Job *front;                    // pointer to the front job
+      Job *rear;                     // pointer to the rear job
+      int currentSize;               // current queue size
+    }Queue;
+
+   Thread Pool:
+    typedef struct PoolStruct {
+      pthread_t *threads;
+      int threadsNum;
+      Queue *queue;
+    }ThreadPool;
+
+   Arguments:
+    typedef struct ArgStruct {
+      int sock_id;
+      int sock_fd;
+      int threadsNum;
+      Queue *queue;
+      char fullPath[256];            // absolute path of the request file
+      char log[256];                 // store the log info
+      int flg;                       // decide show the content or not
+      char *sched;                   // FCFS or SJF
+      char dir[256];                 // root directory
+      char *logFile;                 // the log file
+      int debugFlg;                  // debug or not
+    }Args;
+
+4. Context switch:
+   The listening thread starts when the program executes. The thread pool is initalized after the waiting time. Then the threads in the pool will be waken up and execute the job from the queue. The FCFS enqueue the job by the coming time, the SJF enqueue the job by the job size. No matter what schedule you choose, the thread pool will always choose the rear job in the queue and dispath it to a thread. After the thread finishes its job, it will stay back to the pool, waiting to be waken up again.
+
+5. How to avoid race conditions:
+   We use mutex to implement the mutual exclution when enqueue and dequeue a job from the queue. And use a counting semaphore to protect the queue size.
+
+6. Design advantages:
+   The structure design such as job, queue and thread pool is very clear and intuitive. These structures are all independent modules, they don't care what exactly the job is. It highly improves the reusable of the program.
+
+   Disadvantages:
+   Use monitor to do the thread synchronization is much better. You don't have to explicitly acquire a lock everytime before using the resource. It is much easier.
+   Use the arguments structure to pass the arguments to the function. It is much more complicated. There are two function use the same arguments structure, each one just use a part of it. And it is not reusable, a new funtion comes, it need to add some new arguments into the structure.
